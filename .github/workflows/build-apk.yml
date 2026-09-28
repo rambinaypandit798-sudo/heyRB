@@ -69,17 +69,28 @@ jobs:
 
       - name: Prepare Web Assets for Capacitor
         run: |
+          echo "Checking build outputs..."
+          ls -la .output || true
+          ls -la dist || true
+          
           mkdir -p dist
           
+          # Tanstack Start / Nitro ke sabhi output folders ko dist me transfer karna
           if [ -d ".output/public" ]; then
-            cp -r .output/public/* dist/
+            cp -r .output/public/. dist/
           elif [ -d "output/public" ]; then
-            cp -r output/public/* dist/
+            cp -r output/public/. dist/
+          elif [ -d ".output" ]; then
+            cp -r .output/. dist/
           fi
 
-          if [ ! -f "dist/index.html" ]; then
-            echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>heyrB</title></head><body><div id="root"></div></body></html>' > dist/index.html
+          # Agar public folder me bhi static files hain toh unhe bhi lena
+          if [ -d "public" ]; then
+            cp -r public/. dist/ 2>/dev/null || true
           fi
+
+          echo "Files inside dist folder:"
+          ls -la dist
 
           cat << 'EOF' > capacitor.config.ts
           import { CapacitorConfig } from '@capacitor/cli';
