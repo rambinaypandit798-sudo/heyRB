@@ -67,10 +67,11 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
-      # 9. Capacitor Android Platform Add aur Sync karein (Bina init ke taaki error na aaye)
-      - name: Add and Sync Android Platform
+      # 9. Capacitor Initialize karein (Sahi App ID aur Web Dir ke sath)
+      - name: Capacitor Init and Add Android
         run: |
-          npx cap add android || true
+          npx cap init heyrB com.heyrb.app --web-dir=.output/public --yes
+          npx cap add android
           npx cap sync android
 
       # 10. Android Debug APK Build karein
