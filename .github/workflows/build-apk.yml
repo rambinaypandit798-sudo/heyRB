@@ -2,7 +2,7 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
@@ -17,45 +17,33 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
 
       - name: Setup Java JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: "temurin"
+          java-version: "17"
 
       - name: Setup Android SDK
-        shell: bash
         run: |
-          set -euo pipefail
-          # Set proper Android SDK root directory manually
-          echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-          
-          mkdir -p $HOME/android-sdk/cmdline-tools
-          cd $HOME/android-sdk/cmdline-tools
+          mkdir -p $ANDROID_HOME/cmdline-tools
+          cd $ANDROID_HOME/cmdline-tools
 
-          if [ ! -x "$HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager" ]; then
+          if [ ! -d "latest" ]; then
             wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
-            unzip -q -o cmdline-tools.zip
+            unzip -q cmdline-tools.zip
             rm -rf latest
             mv cmdline-tools latest
+            rm cmdline-tools.zip
           fi
 
-          echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
 
       - name: Install Android SDK Packages
-        shell: bash
         run: |
-          set -euo pipefail
-          export ANDROID_SDK_ROOT=$HOME/android-sdk
-          export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools
-          
-          yes | sdkmanager --licenses >/dev/null || true
+          yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
       - name: Cache Gradle packages
@@ -69,7 +57,7 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Install NPM Dependencies
-        run: npm install --legacy-peer-deps
+        run: npm ci
 
       - name: Build Web App
         run: npm run build
@@ -78,7 +66,7 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
-      - name: Ensure Capacitor Config & Add Android Platform
+      - name: Create Capacitor Config
         run: |
           cat << 'EOF' > capacitor.config.ts
           import { CapacitorConfig } from '@capacitor/cli';
@@ -95,17 +83,22 @@ jobs:
           export default config;
           EOF
 
+      - name: Setup Capacitor Android Project
+        run: |
+          set -e
+
           if [ ! -d "android" ]; then
+            echo "Android project does not exist. Creating it..."
             npx cap add android
           else
-            npx cap sync android
+            echo "Android project exists. Syncing..."
           fi
+
+          npx cap sync android
 
       - name: Build Android APK
         run: |
           cd android
-          export ANDROID_SDK_ROOT=$HOME/android-sdk
-          export ANDROID_HOME=$HOME/android-sdk
           chmod +x gradlew
           ./gradlew assembleDebug
 
