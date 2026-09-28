@@ -49,7 +49,7 @@ jobs:
         run: npm ci
 
       - name: Build Web App
-        run: npm run build
+        run: npx vinxi build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
@@ -63,6 +63,8 @@ jobs:
             cp -r .output/public/* dist/
           elif [ -d "output/public" ]; then
             cp -r output/public/* dist/
+          elif [ -d "dist" ] && [ "$(ls -A dist)" ]; then
+            echo "Using existing dist"
           fi
           if [ ! -f "dist/index.html" ]; then
             echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>heyrB</title></head><body><div id="root"></div></body></html>' > dist/index.html
