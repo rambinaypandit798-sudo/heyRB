@@ -67,9 +67,9 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
-      # 9. Capacitor Initialize karein (FIXED WEB DIR)
+      # 9. Capacitor Initialize karein (FIXED WEB DIR = out)
       - name: Capacitor Init
-        run: npx cap init heyrB com.heyrb.app --web-dir=.output/public
+        run: npx cap init heyrB com.heyrb.app --web-dir=out
 
       # 10. Capacitor Android Platform Add karein
       - name: Add Android Platform
