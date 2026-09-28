@@ -20,14 +20,16 @@ jobs:
       with:
         node-version: '22'
 
-    - name: Setup Java 21
+    - name: Setup Java 17
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '21'
+        java-version: '17'
 
     - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
+      run: |
+        echo "SDK Setup started"
+        sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
 
     - name: Install dependencies
       run: bun install
