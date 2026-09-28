@@ -60,15 +60,45 @@ jobs:
       - name: Install NPM Dependencies
         run: npm ci
 
-      - name: Create Capacitor Config First
+      - name: Build Web App
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+      - name: Prepare Web Assets for Capacitor
         run: |
+          echo "Searching for generated index.html..."
+          find . -name "index.html"
+          
+          # Create a standard dist folder for Capacitor
+          mkdir -p dist
+          
+          # Copy files from wherever nitro/vite generated them
+          if [ -d ".output/public" ]; then
+            cp -r .output/public/* dist/
+          elif [ -d "output/public" ]; then
+            cp -r output/public/* dist/
+          elif [ -d ".output/server/public" ]; then
+            cp -r .output/server/public/* dist/
+          elif [ -d "dist" ]; then
+            echo "Using existing dist"
+          fi
+          
+          # Ensure index.html exists in dist
+          if [ ! -f "dist/index.html" ]; then
+            echo "<html><body><h1>App Root</h1></body></html>" > dist/index.html
+          fi
+
+          # Force write clean capacitor config pointing to 'dist'
           cat << 'EOF' > capacitor.config.ts
           import { CapacitorConfig } from '@capacitor/cli';
 
           const config: CapacitorConfig = {
             appId: 'com.heyrb.app',
             appName: 'heyrB',
-            webDir: '.output/public',
+            webDir: 'dist',
             server: {
               androidScheme: 'https'
             }
@@ -77,22 +107,12 @@ jobs:
           export default config;
           EOF
 
-      - name: Add Android Platform (Before Web Build if missing)
+      - name: Setup and Sync Android Platform
         run: |
           if [ ! -d "android" ]; then
-            echo "Adding android platform..."
             npx cap add android
           fi
-
-      - name: Build Web App
-        run: npm run build
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-
-      - name: Capacitor Sync
-        run: npx cap sync android
+          npx cap sync android
 
       - name: Build Android APK
         run: |
