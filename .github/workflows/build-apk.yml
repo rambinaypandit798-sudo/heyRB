@@ -67,22 +67,26 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
-      # 9. Capacitor Android Platform Add karein (FIXED STEP)
+      # 9. Capacitor Initialize karein (FIXED STEP)
+      - name: Capacitor Init
+        run: npx cap init heyrB com.heyrb.app --web-dir=out
+
+      # 10. Capacitor Android Platform Add karein
       - name: Add Android Platform
         run: npx cap add android
 
-      # 10. Capacitor Sync karein
+      # 11. Capacitor Sync karein
       - name: Capacitor Sync
         run: npx cap sync android
 
-      # 11. Android Debug APK Build karein
+      # 12. Android Debug APK Build karein
       - name: Build Android APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      # 12. APK Upload karein
+      # 13. APK Upload karein
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
