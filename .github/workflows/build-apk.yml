@@ -28,13 +28,20 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # 4. Android SDK Setup karein (FIXED VERSION)
+      # 4. Android SDK Manually Setup karein (FIXED)
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3.2.1
+        run: |
+          mkdir -p $ANDROID_HOME/cmdline-tools
+          cd $ANDROID_HOME/cmdline-tools
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+          unzip -q cmdline-tools.zip
+          mv cmdline-tools latest
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
 
       # 5. Android SDK Packages Install karein
       - name: Install Android SDK Packages
         run: |
+          yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
       # 6. Gradle Cache karein
