@@ -2,13 +2,15 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
   build:
     name: Build APK
     runs-on: ubuntu-latest
+    env:
+      ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
 
     steps:
       - name: Checkout Source Code
@@ -17,40 +19,42 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
+          cache: "npm"
 
       - name: Setup Java JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: "temurin"
+          java-version: "17"
 
       - name: Setup Android SDK
+        shell: bash
         run: |
-          mkdir -p $ANDROID_HOME/cmdline-tools
-          cd $ANDROID_HOME/cmdline-tools
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
-          unzip -q cmdline-tools.zip
-          mv cmdline-tools latest
-          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          set -euo pipefail
+
+          mkdir -p "$ANDROID_HOME/cmdline-tools"
+          cd "$ANDROID_HOME/cmdline-tools"
+
+          if [ ! -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
+            wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+            rm -rf latest
+            unzip -q -o cmdline-tools.zip
+            mv cmdline-tools latest
+          fi
+
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
 
       - name: Install Android SDK Packages
+        shell: bash
         run: |
-          yes | sdkmanager --licenses
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null
           sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
-      - name: Cache Gradle packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
       - name: Install NPM Dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build Web App
         run: npm run build
@@ -59,33 +63,41 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
-      - name: Force Create/Fix Capacitor Config & Add Android
+      - name: Ensure Capacitor Android project exists
+        shell: bash
         run: |
-          # Ensure capacitor.config.ts exists with correct webDir and appId to prevent missing config errors
-          cat << 'EOF' > capacitor.config.ts
-          import { CapacitorConfig } from '@capacitor/cli';
+          set -euo pipefail
+
+          if [ ! -f capacitor.config.ts ]; then
+            cat <<'EOF' > capacitor.config.ts
+          import type { CapacitorConfig } from '@capacitor/cli';
 
           const config: CapacitorConfig = {
             appId: 'com.heyrb.app',
             appName: 'heyrB',
             webDir: '.output/public',
             server: {
-              androidScheme: 'https'
-            }
+              androidScheme: 'https',
+            },
           };
 
           export default config;
           EOF
+          fi
 
-          # Initialize and add android platform cleanly
-          npx cap add android || true
+          if [ ! -d android ]; then
+            npx cap add android --no-interactive
+          fi
+
           npx cap sync android
 
       - name: Build Android APK
+        shell: bash
         run: |
+          set -euo pipefail
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
