@@ -26,9 +26,6 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-
     - name: Install dependencies
       run: bun install
 
@@ -41,11 +38,14 @@ jobs:
     - name: Sync Capacitor Android
       run: npx cap sync android
 
-    - name: Build Debug APK
+    - name: Build Debug APK with Auto SDK
+      env:
+        ANDROID_HOME: /usr/local/lib/android/sdk
       run: |
+        echo "sdk.dir=$ANDROID_HOME" > android/local.properties
         cd android
         chmod +x gradlew
-        ./gradlew assembleDebug
+        ./gradlew assembleDebug --no-daemon
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
