@@ -11,24 +11,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Code checkout karein
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      # 2. Node.js Setup karein
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      # 3. Java 17 Setup karein
       - name: Setup Java JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 4. Android SDK Manually Setup karein
       - name: Setup Android SDK
         run: |
           mkdir -p $ANDROID_HOME/cmdline-tools
@@ -38,13 +34,11 @@ jobs:
           mv cmdline-tools latest
           echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
 
-      # 5. Android SDK Packages Install karein
       - name: Install Android SDK Packages
         run: |
           yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
-      # 6. Gradle Cache karein
       - name: Cache Gradle packages
         uses: actions/cache@v4
         with:
@@ -55,11 +49,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      # 7. Dependencies Install karein
       - name: Install NPM Dependencies
         run: npm install
 
-      # 8. Web Code Build karein (Static HTML Generate karne ke liye)
       - name: Build Web App
         run: npm run build
         env:
@@ -67,21 +59,34 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
-      # 9. Capacitor Initialize karein (Sahi App ID aur Web Dir ke sath)
-      - name: Capacitor Init and Add Android
+      - name: Force Create/Fix Capacitor Config & Add Android
         run: |
-          npx cap init heyrB com.heyrb.app --web-dir=.output/public --yes
-          npx cap add android
+          # Ensure capacitor.config.ts exists with correct webDir and appId to prevent missing config errors
+          cat << 'EOF' > capacitor.config.ts
+          import { CapacitorConfig } from '@capacitor/cli';
+
+          const config: CapacitorConfig = {
+            appId: 'com.heyrb.app',
+            appName: 'heyrB',
+            webDir: '.output/public',
+            server: {
+              androidScheme: 'https'
+            }
+          };
+
+          export default config;
+          EOF
+
+          # Initialize and add android platform cleanly
+          npx cap add android || true
           npx cap sync android
 
-      # 10. Android Debug APK Build karein
       - name: Build Android APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      # 11. APK Upload karein
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
