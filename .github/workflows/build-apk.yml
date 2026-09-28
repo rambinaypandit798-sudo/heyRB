@@ -9,8 +9,7 @@ jobs:
   build:
     name: Build APK
     runs-on: ubuntu-latest
-    env:
-      ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
+    
 
     steps:
       - name: Checkout Source Code
