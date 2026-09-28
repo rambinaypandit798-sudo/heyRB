@@ -15,11 +15,11 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      # 2. Node.js Setup karein
+      # 2. Node.js Setup karein (Version 22 - FIXED)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       # 3. Java 17 Setup karein
       - name: Setup Java JDK 17
@@ -28,7 +28,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # 4. Android SDK Manually Setup karein (FIXED)
+      # 4. Android SDK Manually Setup karein
       - name: Setup Android SDK
         run: |
           mkdir -p $ANDROID_HOME/cmdline-tools
