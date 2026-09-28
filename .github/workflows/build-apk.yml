@@ -15,7 +15,7 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      # 2. Node.js Setup karein (Version 22 - Capacitor requirement)
+      # 2. Node.js Setup karein
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -28,7 +28,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # 4. Android SDK Manually Setup karein (Fixed)
+      # 4. Android SDK Manually Setup karein
       - name: Setup Android SDK
         run: |
           mkdir -p $ANDROID_HOME/cmdline-tools
@@ -59,17 +59,18 @@ jobs:
       - name: Install NPM Dependencies
         run: npm install
 
-      # 8. Web Code Build karein
+      # 8. Web Code Build karein (Static HTML Generate karne ke liye)
       - name: Build Web App
         run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          NITRO_PRESET: static
 
-      # 9. Capacitor Initialize karein (Web Dir = .output/public)
+      # 9. Capacitor Initialize karein (Web Dir = dist)
       - name: Capacitor Init
-        run: npx cap init heyrB com.heyrb.app --web-dir=.output/public
+        run: npx cap init heyrB com.heyrb.app --web-dir=dist
 
       # 10. Capacitor Android Platform Add karein
       - name: Add Android Platform
