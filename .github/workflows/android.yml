@@ -27,9 +27,7 @@ jobs:
         java-version: '17'
 
     - name: Setup Android SDK
-      run: |
-        echo "SDK Setup started"
-        sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+      uses: android-actions/setup-android@v3
 
     - name: Install dependencies
       run: bun install
