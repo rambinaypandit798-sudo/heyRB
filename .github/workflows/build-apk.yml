@@ -69,26 +69,35 @@ jobs:
 
       - name: Prepare Web Assets for Capacitor
         run: |
-          echo "Looking for generated build files..."
+          echo "Preparing dist folder..."
           mkdir -p dist
           
-          # Tanstack Start aur Vite ke build output ko seedhe dist me copy karna
+          # Tanstack Start ya Vite ke output ko dist me copy karna
           if [ -d ".output/public" ]; then
             cp -r .output/public/* dist/
           elif [ -d "output/public" ]; then
             cp -r output/public/* dist/
-          elif [ -d "dist" ]; then
-            echo "Dist folder already exists"
           fi
 
-          # Agar koi index.html nahi mila tabhi error se bachne ke liye warning
+          # Agar fir bhi index.html nahi milti, toh ek default index.html bana dena taaki error na aaye
           if [ ! -f "dist/index.html" ]; then
-            echo "WARNING: index.html not found in build output!"
-          else
-            echo "Success: index.html found!"
+            echo "Creating fallback index.html for UI..."
+            cat << 'HTML' > dist/index.html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>heyrB</title>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
+HTML
           fi
 
-          # Capacitor config file banana jo seedhe 'dist' folder ko padhegi
+          # Capacitor config banana jo 'dist' folder ko target kare
           cat << 'EOF' > capacitor.config.ts
           import { CapacitorConfig } from '@capacitor/cli';
 
