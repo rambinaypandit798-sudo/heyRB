@@ -20,7 +20,6 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
-      # Yahan Java 17 ki jagah Java 21 set kiya gaya hai
       - name: Setup Java JDK 21
         uses: actions/setup-java@v4
         with:
@@ -70,25 +69,26 @@ jobs:
 
       - name: Prepare Web Assets for Capacitor
         run: |
-          echo "Searching for generated index.html..."
-          find . -name "index.html"
-          
+          echo "Looking for generated build files..."
           mkdir -p dist
           
+          # Tanstack Start aur Vite ke build output ko seedhe dist me copy karna
           if [ -d ".output/public" ]; then
             cp -r .output/public/* dist/
           elif [ -d "output/public" ]; then
             cp -r output/public/* dist/
-          elif [ -d ".output/server/public" ]; then
-            cp -r .output/server/public/* dist/
           elif [ -d "dist" ]; then
-            echo "Using existing dist"
-          fi
-          
-          if [ ! -f "dist/index.html" ]; then
-            echo "<html><body><h1>App Root</h1></body></html>" > dist/index.html
+            echo "Dist folder already exists"
           fi
 
+          # Agar koi index.html nahi mila tabhi error se bachne ke liye warning
+          if [ ! -f "dist/index.html" ]; then
+            echo "WARNING: index.html not found in build output!"
+          else
+            echo "Success: index.html found!"
+          fi
+
+          # Capacitor config file banana jo seedhe 'dist' folder ko padhegi
           cat << 'EOF' > capacitor.config.ts
           import { CapacitorConfig } from '@capacitor/cli';
 
